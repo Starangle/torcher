@@ -13,7 +13,7 @@ class Torcher():
         else:
             return [problist,]
 
-    def __init__(self,model,loss,metrics=None):
+    def __init__(self,model,loss,opti,metrics=None,transforms=None):
         if isinstance(model,str):
             model=torch.load(model)
         assert isinstance(model,torch.nn.Module)
@@ -21,7 +21,8 @@ class Torcher():
         self.loss=loss
         self.metrics=self.problist2list(metrics)
         self.metrics_name=[x.__name__ for x in self.metrics]
-        self.optimizer=torch.optim.Adam(self.model.parameters())
+        self.optimizer=opti(self.model.parameters())
+        self.transforms=self.problist2list(transforms)
     
     
     def fit(self,train_data,valid_data=None,model_path=None,epochs=1):
@@ -37,13 +38,19 @@ class Torcher():
                 record=[]
 
                 x,y=x.cuda(),y.cuda()
+
+                # apply transforms
+                with torch.no_grad():
+                    for transform in self.transforms:
+                        x=transform(x)
+
                 pred=self.model(x)
                 loss=self.loss(pred,y)
                 loss.backward()
                 self.optimizer.step()
                 record.append(loss.item())
 
-                    # eval metrics
+                # eval metrics
                 for metric in self.metrics:
                     metric_value=metric(pred,y)
                     record.append(metric_value)
@@ -63,6 +70,11 @@ class Torcher():
                 for x,y in valid_data:
                     valid_record=[]
                     x,y=x.cuda(),y.cuda()
+                    
+                    # apply transforms
+                    for transform in self.transforms:
+                        x=transform(x)
+
                     pred=self.model(x)
                     loss=self.loss(pred,y)
                     valid_record.append(loss.item())
