@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="torcher",
-    version="0.0.2",
+    version="0.0.3",
     author="binsu",
     author_email="binsu.cs@qq.com",
     description="A pytorch model training util",
