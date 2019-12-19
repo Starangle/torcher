@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="torcher-binsu", # Replace with your own username
-    version="0.0.1",
+    name="torcher",
+    version="0.0.2",
     author="binsu",
     author_email="binsu.cs@qq.com",
     description="A pytorch model training util",
