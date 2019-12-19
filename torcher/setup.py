@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="torcher-binsu, # Replace with your own username
+    name="torcher-binsu", # Replace with your own username
     version="0.0.1",
     author="binsu",
     author_email="binsu.cs@qq.com",
