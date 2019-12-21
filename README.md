@@ -25,3 +25,13 @@ f(y_pred,y_true) -> metric
 
 ## transfrom对象
 transform对象用来对输入进行一些与处理，transform对象应当是可调用的。用transform对象进行的变换不会被计算梯度，这允许你在GPU上使用一些函数来加速模型，例如在GPU上进行FFT变换。transform对象应当同model对象一样被放置在GPU上。
+
+## optimizer对象
+`opti`参数接受形如
+```
+lambda x:torch.optim.Adam(x,lr=0.01)
+```
+的函数对象，其中x会在Torcher对象中为其赋值，其余超参数可以在自己进行设定。
+
+# 0.0.4更新特性
+现在Torcher支持将日志写入到文件中，相比与使用重定向，这可以避免一些提示性的输出（例如进度条）。可以通过`fit`函数的`log_file`参数来指定写入的文件。

@@ -1,6 +1,8 @@
 import torch
 from progressbar import progressbar as pb
 import numpy as np
+import os
+import time
 
 class Torcher():
 
@@ -12,6 +14,18 @@ class Torcher():
             return []
         else:
             return [problist,]
+    @classmethod
+    def write_log(self,filename,text):
+        if filename is not None:
+            # if file not exist, create it
+            if not os.path.exists(filename):
+                if not os.path.exists(os.path.split(filename)[0]):
+                    os.makedirs(os.path.split(filename)[0])
+            # write log
+            with open(filename,'a+') as f:
+                f.write(text+'\n')
+
+        print(text)
 
     def __init__(self,model,loss,opti,metrics=None,transforms=None):
         if isinstance(model,str):
@@ -25,13 +39,15 @@ class Torcher():
         self.transforms=self.problist2list(transforms)
     
     
-    def fit(self,train_data,valid_data=None,model_path=None,epochs=1):
+    def fit(self,train_data,valid_data=None,model_path=None,epochs=1,log_file=None):
         assert isinstance(train_data,torch.utils.data.DataLoader)
+
+        self.write_log(log_file,time.asctime())
         self.model.train()
 
         for epo in range(epochs):
             
-            print('Epoch {}/{}'.format(epo+1,epochs))
+            self.write_log(log_file,'Epoch {}/{}'.format(epo+1,epochs))
             history=[]
             for x,y in pb(train_data):
                 self.optimizer.zero_grad()
@@ -62,7 +78,7 @@ class Torcher():
             loss_tip="train loss is {:.4f}".format(statics[0])
             metric_tips=list(map(", {} is {:.4f}".format,self.metrics_name,statics[1:]))
             tip="".join([loss_tip,*metric_tips])
-            print(tip)
+            self.write_log(log_file,tip)
 
             # valid
             valid_history=[]
@@ -88,20 +104,11 @@ class Torcher():
             loss_tip="valid loss is {:.4f}".format(valid_statics[0])
             metric_tips=list(map(", {} is {:.4f}".format,self.metrics_name,valid_statics[1:]))
             tip="".join([loss_tip,*metric_tips])
-            print(tip)
+            self.write_log(log_file,tip)
 
             if model_path:
                 torch.save(self.model,model_path)
         
     def save(self,model_path):
-        torch.save(model_path)
-
-
-                    
-
-
-        
-
-            
-        
+        torch.save(self.model,model_path)
 

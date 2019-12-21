@@ -38,4 +38,4 @@ from torcher import Torcher
 
 model=SimpleNet().cuda()
 trainer=Torcher(model,loss,opti=lambda x:torch.optim.Adam(x),metrics=metric_acc)
-trainer.fit(train_data,valid_data=vaild_data,model_path=test_dir+'dnn4mnist',epochs=10)
+trainer.fit(train_data,valid_data=vaild_data,model_path=test_dir+'dnn4mnist',epochs=10,log_file=test_dir+'log.txt')
