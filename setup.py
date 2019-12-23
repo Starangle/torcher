@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="torcher",
-    version="0.0.4",
+    version="0.0.5",
     author="binsu",
     author_email="binsu.cs@qq.com",
     description="A pytorch model training util",

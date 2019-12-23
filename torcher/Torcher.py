@@ -19,7 +19,8 @@ class Torcher():
         if filename is not None:
             # if file not exist, create it
             if not os.path.exists(filename):
-                if not os.path.exists(os.path.split(filename)[0]):
+                target_dir=os.path.split(filename)[0]
+                if target_dir!='' and not os.path.exists(target_dir):
                     os.makedirs(os.path.split(filename)[0])
             # write log
             with open(filename,'a+') as f:
