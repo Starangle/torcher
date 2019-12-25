@@ -28,7 +28,7 @@ class Torcher():
 
         print(text)
 
-    def __init__(self,model,loss,opti,metrics=None,transforms=None):
+    def __init__(self,model,loss,opti,metrics=None,transform=None):
         if isinstance(model,str):
             model=torch.load(model)
         assert isinstance(model,torch.nn.Module)
@@ -37,7 +37,7 @@ class Torcher():
         self.metrics=self.problist2list(metrics)
         self.metrics_name=[x.__name__ for x in self.metrics]
         self.optimizer=opti(self.model.parameters())
-        self.transforms=self.problist2list(transforms)
+        self.transform=transform
     
     
     def fit(self,train_data,valid_data=None,model_path=None,epochs=1,log_file=None):
@@ -51,16 +51,13 @@ class Torcher():
             self.write_log(log_file,'Epoch {}/{}'.format(epo+1,epochs))
             history=[]
             for x,y in pb(train_data):
+                if x is None:
+                    continue
                 self.optimizer.zero_grad()
                 record=[]
-
-                x,y=x.cuda(),y.cuda()
-
-                # apply transforms
-                with torch.no_grad():
-                    for transform in self.transforms:
-                        x=transform(x)
-
+                if self.transform:
+                    with torch.no_grad():
+                        x=self.transform(x)
                 pred=self.model(x)
                 loss=self.loss(pred,y)
                 loss.backward()
