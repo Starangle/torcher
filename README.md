@@ -38,6 +38,10 @@ lambda x:torch.optim.Adam(x,lr=0.01)
 * 现在transform由用户的类型为用户编写的`torch.nn.Module`的子类
 * model和transform对象中数据在CPU和GPU之间的迁移应当由用户决定，以便于构建在多个GPU上并行的模型
 * 支持DataLoader输出的某个batch为`None,None`的操作，这个批次被直接跳过
+* 增加学习率衰减的回调函数，支持按照loss衰减和按照训练时间衰减两种模式，通过`method`来指定，关键字分别为`based_on_loss`和`based_on_epoch`
+    * loss:当连续`freq`个epoch中没有出现loss下降，则将学习率乘上`decay`的数值
+    * 按时间衰减：每经过`freq`个epoch，将学习率乘上`decay`的数值
+* 修复`valid_data=None`时的Bug
 
 # 0.0.4更新
 * 现在Torcher支持将日志写入到文件中，相比与使用重定向，这可以避免一些提示性的输出（例如进度条）。可以通过`fit`函数的`log_file`参数来指定写入的文件。
