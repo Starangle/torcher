@@ -3,6 +3,7 @@ from progressbar import progressbar as pb
 import numpy as np
 import os
 import time
+from .callback import *
 
 class Torcher():
 
@@ -39,16 +40,25 @@ class Torcher():
         self.optimizer=opti(self.model.parameters())
         self.transform=transform
     
+    def init_callbacks(self,callbacks):
+        for cbk in callbacks:
+            if isinstance(cbk,LearningRateDecay):
+                cbk.associate(self.optimizer)
     
-    def fit(self,train_data,valid_data=None,model_path=None,epochs=1,log_file=None):
+    def fit(self,train_data,valid_data=None,model_path=None,epochs=1,log_file=None,callbacks=[]):
         assert isinstance(train_data,torch.utils.data.DataLoader)
 
         self.write_log(log_file,time.asctime())
-        self.model.train()
+        self.init_callbacks(callbacks)
 
         for epo in range(epochs):
+
+            for cbk in callbacks: #TODO: the parameters will be determined later
+                if hasattr(cbk,'on_epoch_begin'):
+                    cbk.on_epoch_begin()
             
             self.write_log(log_file,'Epoch {}/{}'.format(epo+1,epochs))
+            self.model.train()
             history=[]
             for x,y in pb(train_data):
                 if x is None:
@@ -78,34 +88,42 @@ class Torcher():
             tip="".join([loss_tip,*metric_tips])
             self.write_log(log_file,tip)
 
-            # valid
-            valid_history=[]
-            with torch.no_grad():
-                for x,y in valid_data:
-                    valid_record=[]
-                    x,y=x.cuda(),y.cuda()
-                    
-                    # apply transforms
-                    for transform in self.transforms:
-                        x=transform(x)
+            if isinstance(valid_data,torch.utils.data.DataLoader):
+                # valid
+                self.model.eval()
+                valid_history=[]
+                with torch.no_grad():
+                    for x,y in valid_data:
+                        if x is None:
+                            continue
+                        valid_record=[]
+                        if self.transform:
+                            x=self.transform(x)
 
-                    pred=self.model(x)
-                    loss=self.loss(pred,y)
-                    valid_record.append(loss.item())
+                        pred=self.model(x)
+                        loss=self.loss(pred,y)
+                        valid_record.append(loss.item())
 
-                    for metric in self.metrics:
-                        metric_value=metric(pred,y)
-                        valid_record.append(metric_value)
-                    valid_history.append(valid_record)
+                        for metric in self.metrics:
+                            metric_value=metric(pred,y)
+                            valid_record.append(metric_value)
+                        valid_history.append(valid_record)
 
-            valid_statics=list(map(np.mean,list(zip(*valid_history))))
-            loss_tip="valid loss is {:.4f}".format(valid_statics[0])
-            metric_tips=list(map(", {} is {:.4f}".format,self.metrics_name,valid_statics[1:]))
-            tip="".join([loss_tip,*metric_tips])
-            self.write_log(log_file,tip)
+                valid_statics=list(map(np.mean,list(zip(*valid_history))))
+                loss_tip="valid loss is {:.4f}".format(valid_statics[0])
+                metric_tips=list(map(", {} is {:.4f}".format,self.metrics_name,valid_statics[1:]))
+                tip="".join([loss_tip,*metric_tips])
+                self.write_log(log_file,tip)
 
             if model_path:
                 torch.save(self.model,model_path)
+
+            for cbk in callbacks:
+                if hasattr(cbk,'on_epoch_end'):
+                    if isinstance(cbk,LearningRateDecay):
+                        cbk.on_epoch_end(epo,valid_statics[0])
+                    else:
+                        cbk.on_epoch_end()
         
     def save(self,model_path):
         torch.save(self.model,model_path)
