@@ -115,16 +115,51 @@ class Torcher():
                 tip="".join([loss_tip,*metric_tips])
                 self.write_log(log_file,tip)
 
-            if model_path:
-                torch.save(self.model,model_path)
+            if True not in list(map(lambda x:isinstance(x,Checkpoint),callbacks)):
+                if model_path:
+                    torch.save(self.model,model_path)
 
             for cbk in callbacks:
                 if hasattr(cbk,'on_epoch_end'):
                     if isinstance(cbk,LearningRateDecay):
                         cbk.on_epoch_end(epo,valid_statics[0])
+                    elif isinstance(cbk,Checkpoint):
+                        cbk.on_epoch_end(epo,valid_statics[0],valid_statics[1:],self.model)
                     else:
                         cbk.on_epoch_end()
         
     def save(self,model_path):
         torch.save(self.model,model_path)
+
+    def load(self,model_path):
+        self.model=torch.load(model_path)
+
+    def eval(self,data,model_path):
+        # valid
+        self.load(model_path)
+        self.model.eval()
+        eval_history=[]
+        with torch.no_grad():
+            for x,y in data:
+                if x is None:
+                    continue
+                eval_record=[]
+                if self.transform:
+                    x=self.transform(x)
+
+                pred=self.model(x)
+                loss=self.loss(pred,y)
+                eval_record.append(loss.item())
+
+                for metric in self.metrics:
+                    metric_value=metric(pred,y)
+                    eval_record.append(metric_value)
+                eval_history.append(eval_record)
+
+        eval_statics=list(map(np.mean,list(zip(*eval_history))))
+        loss_tip="valid loss is {:.4f}".format(eval_statics[0])
+        metric_tips=list(map(", {} is {:.4f}".format,self.metrics_name,eval_statics[1:]))
+        tip="".join([loss_tip,*metric_tips])
+        print(tip)
+
 

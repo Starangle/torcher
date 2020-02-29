@@ -1,3 +1,4 @@
+import torch
 class LearningRateDecay:
     def __init__(self,method='based_on_loss',decay=0.5,freq=3):
         assert method in ['based_on_loss','based_on_epoch']
@@ -27,5 +28,23 @@ class LearningRateDecay:
             if epoch%self.freq==0:
                 self.update()
 
-            
+class Checkpoint:
+    def __init__(self,name,mode='loss',metric_id=None):
+        self.name=name
+        self.mode=mode
+        if mode=='metric':
+            assert metric_id is not None
+            self.id=metric_id
+        self.best=None
 
+    def on_epoch_end(self,epoch,val_loss,metrics,model):
+        if self.mode=='loss':
+            if self.best==None or self.best>val_loss:
+                self.best=val_loss
+                print('save on val loss {}'.format(val_loss))
+                torch.save(model,self.name)
+        if self.mode=='metric':
+            if self.best==None or self.best<metrics[self.id]:
+                self.best=metrics[self.id]
+                print('save on val metric {}'.format(metrics[self.id]))
+                torch.save(model,self.name)

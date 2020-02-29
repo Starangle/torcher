@@ -42,6 +42,9 @@ lambda x:torch.optim.Adam(x,lr=0.01)
     * loss:当连续`freq`个epoch中没有出现loss下降，则将学习率乘上`decay`的数值
     * 按时间衰减：每经过`freq`个epoch，将学习率乘上`decay`的数值
 * 修复`valid_data=None`时的Bug
+* 增加名为Checkpoint的回调函数，自动保存在验证集上具有最小的loss的模型
+    *可选择保存具有最高指标的模型
+* 增加eval方法，可以按照设定好的loss和metrics进行验证并报告结果
 
 # 0.0.4更新
 * 现在Torcher支持将日志写入到文件中，相比与使用重定向，这可以避免一些提示性的输出（例如进度条）。可以通过`fit`函数的`log_file`参数来指定写入的文件。
